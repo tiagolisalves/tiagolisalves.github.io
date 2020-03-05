@@ -1,0 +1,315 @@
+<h1>How to get content between html tags with non-greedy regex operators</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>A regex exercise: Suppose that you want get the content between html tags, basically the equivalent result returned by the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/innerHTML">Element.innerHtml</a> function. How you could accomplish this using only Regex?</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_simplest_case_an_unique_occurrence_of_a_tag">The simplest case: An unique occurrence of a tag</h2>
+<div class="sectionbody">
+<div class="sidebarblock">
+<div class="content">
+<div class="title">Prerequisites</div>
+<div class="paragraph">
+<p>Some basic knowledge of Regex is necessary to follow this exercise. You could learn about it from the excellent <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions">MDN Regex guide!</a></p>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Imagine that we have some file with the following content:</p>
+</div>
+<pre class="prettyprint linenums">
+<xmp>
+<!doctype html>
+<html>
+<head>
+  <title>HTML Test</title>
+</head>
+<body>
+  <h1>How many oranges there are in the box?</h1>
+  <box>There are two oranges in the box</box>
+</body>
+</html>
+  </xmp>
+</pre>
+<div class="paragraph">
+<p>And imagine too that we are asked to get the content between the <code>&lt;box&gt;</code> tags. We could use third-party HTML parser&#8217;s like JSDOM, but this won&#8217;t be the content of this post.</p>
+</div>
+<div class="paragraph">
+<p>Our initial test program has the following content:</p>
+</div>
+<pre class="prettyprint linenums">
+<xmp>
+const appHtml = `
+    <h1>How many oranges there are in the box?</h1>
+<box>There are two oranges in the box</box>
+`
+const getBox = (htmlContent) => appHtml.match(/*Regex*/)
+//Should result
+//'There are two oranges in the box'
+</xmp>
+</pre>
+<div class="paragraph">
+<p>We have to match <code>&lt;box&gt;</code>, <code>&lt;/box&gt;</code> and between. To create a Regex we could use the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp">RegExp</a> global object or we could put the expression between 2 separated bars /{regex here}/. We will use the second as I think it&#8217;s more concise for this use case. We will split the final regex on 3 parts to ease the understanding.</p>
+</div>
+<pre class="prettyprint linenums">
+<xmp>
+const appHtml = `
+    <h1>How many oranges there are in the box?</h1>
+<box>There are two oranges in the box</box>
+`
+console.log(appHtml.match(/\<box\>/)) // Matches: ['<box>']
+
+console.log(appHtml.match(/\<box\>.+/)) // Matches: ['<box>There are two oranges in the box']
+
+console.log(appHtml.match(/\<box\>.+\<\/box\>/)) // Matches: ['<box>There are two oranges in the box</box>']
+</xmp>
+</pre>
+<div class="paragraph">
+<p>We got the entire match including the tags. How we could get rid of the tags?</p>
+</div>
+<div class="paragraph">
+<p>There are two ways. One I think it&#8217;s dumb for basic uses and very common for whom is beginning (me included some time ago) and consists basically on replacing the tags with <code>String.prototype.replace</code>. Like:</p>
+</div>
+<pre class="prettyprint linenums">
+<xmp>
+const appHtml = `
+    <h1>How many oranges there are in the box?</h1>
+<box>There are two oranges in the box</box>
+`
+appHtml.match(/\<box\>.+\<\/box\>/).replace('<box>', '').replace('<\box>', '')
+</xmp>
+</pre>
+<div class="paragraph">
+<p>The other way is to use capturing groups. The difference between the first and the second is that the first is a workaround. The second is the built-in way of capture parts of a text using Regex. A capturing group is represented by <code>()</code>. Let&#8217;s put it in code:</p>
+</div>
+<pre class="prettyprint linenums">
+<xmp>
+const appHtml = `
+    <h1>How many oranges there are in the box?</h1>
+<box>There are two oranges in the box</box>
+`
+appHtml.match(/\<box\>(.+)\<\/box\>/)// Result: [ '<box>There are two oranges in the box</box>',
+  'There are two oranges in the box', ....]
+</xmp>
+</pre>
+<div class="paragraph">
+<p>As you can see, the first is the entire match, the second match, which is our desired result, representing only the text matched with <code>(.+)</code>.</p>
+</div>
+<div class="paragraph">
+<p>A capturing group means practically that when you use it, the result of the expression between <code>()</code> will be placed separated from the entire match.</p>
+</div>
+<div class="paragraph">
+<p>Therefore, for one occurrence of a tag within a HTML file, we have the final code:</p>
+</div>
+<pre class="prettyprint linenums">
+<xmp>
+const appHtml = `
+    <h1>How many oranges there are in the box?</h1>
+<box>There are two oranges in the box</box>
+`
+console.log(appHtml.match(/\<box\>(.+)\<\/box\>/)[1])// Result: 'There are two oranges in the box'
+</xmp>
+</pre>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_more_fun_multiple_occurrences_of_a_tag">More fun: Multiple occurrences of a tag</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Only to simplify, we will have two occurrences of the tag on the HTML file. But the final code should works for any number of occurrences as well. Let&#8217;s apply our regex from last section to the code bellow to see what happen.</p>
+</div>
+<pre class="prettyprint linenums">
+<xmp>
+const appHtml = `
+    <h1>How many fruits there are in each box?</h1>
+<box>There are two oranges in the box</box>
+<box>There are two apples in the box</box>
+`
+console.log(appHtml.match(/\<box\>(.+)\<\/box\>/)[1]) //Result: 'There are two oranges in the box'
+</xmp>
+</pre>
+<div class="paragraph">
+<p>As we can see, the result is the same before. Why? The reason is that a regex could works for more than one match, or stops at first match. To make a regex works on multiple matches we need the global modifier which is represented by the <code>g</code>:</p>
+</div>
+<pre class="prettyprint linenums">
+<xmp>
+...
+console.log(appHtml.match(/\<box\>(.+)\<\/box\>/g)) /*Result: [
+  '<box>There are two oranges in the box</box>',
+  '<box>There are two apples in the box</box>'
+]*/
+</xmp>
+</pre>
+<div class="paragraph">
+<p>Strange enough, the captured groups didn&#8217;t make any effect on the final result. As we can see on the docs, the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/match">String.prototype.match</a> method will match only the entire Regex when using the global <code>g</code> flag.</p>
+</div>
+<div class="paragraph">
+<p>We&#8217;ll have to use the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/exec">RegExp.prototype.exec</a> method to capture groups in multiple matches. The RegExp is stateful when used with the global flag, which means that the matches are returned one by one per execution of the <code>exec</code> method:</p>
+</div>
+<pre class="prettyprint linenums">
+<xmp>
+<const appHtml = `
+    <h1>How many fruits there are in each box?</h1>
+<box>There are two oranges in the box</box>
+<box>There are two apples in the box</box>`
+
+const regex = /\<box\>(.+)\<\/box\>/g
+
+console.log((regex.exec(appHtml)[1])); // Result: There are two oranges in the box
+console.log((regex.exec(appHtml)[1])); // Result: There are two apples in the box
+console.log((regex.exec(appHtml))); // Result: null
+</xmp>
+</pre>
+<div class="paragraph">
+<p>We want to print out an unknown number of matches, we can print each execution of the exec method on a while, and when the last result is null, the loop stops because null is evaluated to false:</p>
+</div>
+<pre class="prettyprint linenums">
+<xmp>
+const appHtml = `
+    <h1>How many fruits there are in each box?</h1>
+<box>There are two oranges in the box</box>
+<box>There are two apples in the box</box>`
+
+const regex = /\<box\>(.+)\<\/box\>/g
+
+let matches;
+while ((matches = regex.exec(appHtml))) {
+  matches.push(matches[1])
+}
+console.log(matches); //Result: ['There are two oranges in the box', 'There are two apples in the box']
+</xmp>
+</pre>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_even_more_fun_matching_multiple_occurrences_with_any_length_of_content">Even more fun : Matching multiple occurrences with any length of content</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If we try to match tags with content that have <code>\n</code> our still not so powerful regex won&#8217;t work:</p>
+</div>
+<pre class="prettyprint linenums">
+<xmp>
+const appHtml = `
+    <h1>How many fruits there are in each box?</h1>
+<box>
+There are two oranges
+
+and
+
+three eggplants
+
+</box>
+<box>
+There are four apples
+
+and six cinammon rolls
+</box>`
+
+const regex = /\<box\>(.+)\<\/box\>/g
+
+const matches;
+while ((matches = regex.exec(appHtml))) {
+  matches.push(matches[1])
+}
+console.log(matches); //Result: null
+</xmp>
+</pre>
+<div class="paragraph">
+<p>What happens here is that the dotAll operator doesn&#8217;t match line breaks. In ES2018 spec we have the flag s that make the dotAll operator match line breaks too. But we&#8217;re going to cover a technique that it&#8217;s compatible with the ES5 spec.</p>
+</div>
+<div class="paragraph">
+<p>We have 2 operators to work on that, we have \s that matches white-space and we have \S that matches any character that is not white space, including line breaks. All we have to do is to replace the dotAll operator for an expression to select \s or \S, and we represent this alternation with []:</p>
+</div>
+<pre class="prettyprint linenums">
+<xmp>
+const appHtml = `
+    <h1>How many fruits there are in each box?</h1>
+<box>
+There are two oranges
+
+and
+
+three eggplants
+
+</box>
+<box>
+There are four apples
+
+and six cinammon rolls
+</box>`;
+// console.log(appHtml.match(/\<box\>([\s\S]+?)\<\/box\>/));
+const regex = /\<box\>([\s\S]+)\<\/box>/g;
+
+let result = [],
+  matches;
+while ((matches = regex.exec(appHtml))) {
+  result.push(matches[1]);
+}
+console.log(result[1]); /*
+    Result:
+    There are two oranges
+
+    and
+
+    three eggplants
+
+    </box>
+    <box>
+    There are four apples
+
+    and six cinammon rolls
+*/
+</xmp>
+</pre>
+<div class="paragraph">
+<p>As we can see it&#8217;s matching multiple lines, but it&#8217;s not right yet. Now, the expression is matching only one possibility until the last occurrence of &lt;/box&gt;, and this makes some sense because '\s\S' or '.' matches '&lt;/box&gt;' too. We have to make it stop at first match, stop the greediness of '\s\S'. For this we can use the non-greedy operator '?':</p>
+</div>
+<pre class="prettyprint linenums">
+<xmp>
+const appHtml = `
+    <h1>How many fruits there are in each box?</h1>
+<box>
+There are two oranges
+
+and
+
+three eggplants
+
+</box>
+<box>
+There are four apples
+
+and six cinammon rolls
+</box>`;
+// console.log(appHtml.match(/\<box\>([\s\S]+?)\<\/box\>/));
+const regex = /\<box\>([\s\S]+?)\<\/box>/g;
+
+let result = [],
+  matches;
+while ((matches = regex.exec(appHtml))) {
+  result.push(matches[1]);
+}
+console.log(result); /*
+    Result:
+    [There are two oranges
+
+    and
+
+    three eggplants
+
+    ,
+
+    There are four apples
+
+    and six cinammon rolls]
+*/
+</xmp>
+</pre>
+<div class="paragraph">
+<p>We have now a parser for the tag &lt;box&gt;</p>
+</div>
+</div>
+</div>
